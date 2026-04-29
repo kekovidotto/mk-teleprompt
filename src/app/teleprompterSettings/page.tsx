@@ -20,10 +20,18 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { getSettings, updateSettings } from "@/lib/actions";
 
+const FONTS = [
+  { name: 'Arial', value: 'Arial, Helvetica, sans-serif' },
+  { name: 'Verdana', value: 'Verdana, Geneva, sans-serif' },
+  { name: 'Tahoma', value: 'Tahoma, Geneva, sans-serif' },
+  { name: 'Trebuchet', value: '"Trebuchet MS", Helvetica, sans-serif' },
+];
+
 export default function TeleprompterSettingsPage() {
   const [mirroring, setMirroring] = useState(true);
   const [theme, setTheme] = useState("dark");
   const [speed, setSpeed] = useState(145);
+  const [fontFamily, setFontFamily] = useState(FONTS[0].value);
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
@@ -33,6 +41,7 @@ export default function TeleprompterSettingsPage() {
         setMirroring(settings.mirroring);
         setTheme(settings.theme);
         setSpeed(settings.speed);
+        if (settings.fontFamily) setFontFamily(settings.fontFamily);
       }
       setIsLoaded(true);
     }
@@ -43,7 +52,7 @@ export default function TeleprompterSettingsPage() {
   useEffect(() => {
     if (!isLoaded) return;
     const timeoutId = setTimeout(() => {
-      updateSettings({ mirroring, theme, speed });
+      updateSettings({ mirroring, theme, speed, fontFamily });
     }, 500);
     
     if (theme === "light") {
@@ -53,7 +62,7 @@ export default function TeleprompterSettingsPage() {
     }
 
     return () => clearTimeout(timeoutId);
-  }, [mirroring, theme, speed, isLoaded]);
+  }, [mirroring, theme, speed, fontFamily, isLoaded]);
 
   if (!isLoaded) {
     return <div className="flex h-screen items-center justify-center bg-[#131313] text-cyan-400">Carregando Ajustes...</div>;
@@ -151,13 +160,20 @@ export default function TeleprompterSettingsPage() {
                   </div>
                 </div>
 
-                <div className="flex cursor-pointer items-center justify-between rounded-xl border border-zinc-800 bg-zinc-900/50 p-5 transition-colors hover:bg-zinc-800">
+                <div 
+                  className="flex cursor-pointer items-center justify-between rounded-xl border border-zinc-800 bg-zinc-900/50 p-5 transition-colors hover:bg-zinc-800"
+                  onClick={() => {
+                    const currentIndex = FONTS.findIndex(f => f.value === fontFamily);
+                    const nextIndex = (currentIndex + 1) % FONTS.length;
+                    setFontFamily(FONTS[nextIndex].value);
+                  }}
+                >
                   <div className="flex items-center gap-4">
                     <Type className="h-6 w-6 text-zinc-500" />
                     <div>
                       <p className="text-base text-zinc-100">Fonte</p>
                       <p className="text-xs font-semibold text-zinc-400 mt-0.5">
-                        Atual: Inter Semi-Bold
+                        Atual: {FONTS.find(f => f.value === fontFamily)?.name || 'Arial'}
                       </p>
                     </div>
                   </div>

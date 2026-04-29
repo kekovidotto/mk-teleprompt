@@ -16,6 +16,13 @@ import { useState, useEffect, useRef, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { getScriptById, getSettings, updateSettings } from "@/lib/actions";
 
+const FONTS = [
+  { name: 'Arial', value: 'Arial, Helvetica, sans-serif' },
+  { name: 'Verdana', value: 'Verdana, Geneva, sans-serif' },
+  { name: 'Tahoma', value: 'Tahoma, Geneva, sans-serif' },
+  { name: 'Trebuchet', value: '"Trebuchet MS", Helvetica, sans-serif' },
+];
+
 function TeleprompterMode() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -24,6 +31,7 @@ function TeleprompterMode() {
   const [title, setTitle] = useState("Carregando...");
   const [lines, setLines] = useState<string[]>([]);
   const [fontSize, setFontSize] = useState(110);
+  const [fontFamily, setFontFamily] = useState(FONTS[0].value);
   const [speed, setSpeed] = useState(145); // Words per minute aproximado
   const [mirroring, setMirroring] = useState(false);
   const [theme, setTheme] = useState("dark");
@@ -58,6 +66,7 @@ function TeleprompterMode() {
         setSpeed(settings.speed);
         setMirroring(settings.mirroring);
         setTheme(settings.theme);
+        if (settings.fontFamily) setFontFamily(settings.fontFamily);
       }
       setIsLoaded(true);
     }
@@ -68,10 +77,10 @@ function TeleprompterMode() {
   useEffect(() => {
     if (!isLoaded) return;
     const timeoutId = setTimeout(() => {
-      updateSettings({ speed, fontSize });
+      updateSettings({ speed, fontSize, fontFamily });
     }, 1000);
     return () => clearTimeout(timeoutId);
-  }, [speed, fontSize, isLoaded]);
+  }, [speed, fontSize, fontFamily, isLoaded]);
 
   // Lógica de Scroll Automático
   const scrollSpeedPixelsPerSecond = speed * (fontSize / 30); // Fator de cálculo aproximado
@@ -128,7 +137,7 @@ function TeleprompterMode() {
       >
         <main className="relative flex flex-col items-center px-4 md:px-12 w-full max-w-[1024px] mx-auto">
           {/* Script Content */}
-          <div className="w-full max-w-5xl space-y-10 md:space-y-20 pt-[50vh] pb-[60vh] text-center" style={{ fontSize: `${fontSize}px` }}>
+          <div className="w-full max-w-5xl space-y-10 md:space-y-20 pt-[50vh] pb-[60vh] text-center" style={{ fontSize: `${fontSize}px`, fontFamily }}>
             {lines.map((line, index) => (
               <p
                 key={index}
@@ -183,23 +192,35 @@ function TeleprompterMode() {
       <div className="fixed bottom-6 md:bottom-12 left-1/2 z-50 w-[95%] max-w-3xl -translate-x-1/2">
         <div className="flex flex-col md:flex-row items-center justify-between gap-6 md:gap-10 rounded-3xl border border-zinc-700/40 bg-zinc-900/90 px-6 py-6 md:px-10 md:py-8 shadow-2xl backdrop-blur-xl">
           
-          {/* Font Size Controls */}
-          <div className="flex items-center gap-2 md:gap-4 w-full md:w-auto justify-center">
+          {/* Typography Controls */}
+          <div className="flex flex-col items-center gap-3 w-full md:w-auto">
             <button 
-              onClick={() => setFontSize(Math.max(40, fontSize - 10))}
-              className="flex h-12 w-12 md:h-14 md:w-14 items-center justify-center rounded-full border border-zinc-700 bg-zinc-800 transition-colors duration-200 hover:bg-zinc-700 active:scale-90"
+              onClick={() => {
+                const currentIndex = FONTS.findIndex(f => f.value === fontFamily);
+                const nextIndex = (currentIndex + 1) % FONTS.length;
+                setFontFamily(FONTS[nextIndex].value);
+              }}
+              className="flex items-center justify-center gap-2 rounded-full border border-zinc-700 bg-zinc-800 px-4 py-1.5 text-[10px] md:text-xs font-semibold text-cyan-400 transition-colors hover:bg-zinc-700 active:scale-95 uppercase tracking-widest w-full md:w-auto"
             >
-              <Minus className="h-6 w-6 text-zinc-200" />
+              FONTE: {FONTS.find(f => f.value === fontFamily)?.name || 'Arial'}
             </button>
-            <div className="w-14 md:w-16 text-center">
-              <span className="text-xl md:text-2xl font-semibold text-zinc-200">{fontSize}</span>
+            <div className="flex items-center gap-2 md:gap-4 justify-center">
+              <button 
+                onClick={() => setFontSize(Math.max(40, fontSize - 10))}
+                className="flex h-12 w-12 md:h-14 md:w-14 items-center justify-center rounded-full border border-zinc-700 bg-zinc-800 transition-colors duration-200 hover:bg-zinc-700 active:scale-90"
+              >
+                <Minus className="h-6 w-6 text-zinc-200" />
+              </button>
+              <div className="w-14 md:w-16 text-center">
+                <span className="text-xl md:text-2xl font-semibold text-zinc-200">{fontSize}</span>
+              </div>
+              <button 
+                onClick={() => setFontSize(Math.min(200, fontSize + 10))}
+                className="flex h-12 w-12 md:h-14 md:w-14 items-center justify-center rounded-full border border-zinc-700 bg-zinc-800 transition-colors duration-200 hover:bg-zinc-700 active:scale-90"
+              >
+                <Plus className="h-6 w-6 text-zinc-200" />
+              </button>
             </div>
-            <button 
-              onClick={() => setFontSize(Math.min(200, fontSize + 10))}
-              className="flex h-12 w-12 md:h-14 md:w-14 items-center justify-center rounded-full border border-zinc-700 bg-zinc-800 transition-colors duration-200 hover:bg-zinc-700 active:scale-90"
-            >
-              <Plus className="h-6 w-6 text-zinc-200" />
-            </button>
           </div>
 
           {/* Main Play/Pause */}

@@ -86,6 +86,7 @@ export async function getSettings() {
         theme: "dark",
         speed: 145,
         fontSize: 110,
+        fontFamily: "Arial, Helvetica, sans-serif",
       }).returning();
       return newSettings[0];
     }
@@ -95,7 +96,7 @@ export async function getSettings() {
   }
 }
 
-export async function updateSettings(data: { mirroring?: boolean, theme?: string, speed?: number, fontSize?: number }) {
+export async function updateSettings(data: { mirroring?: boolean, theme?: string, speed?: number, fontSize?: number, fontFamily?: string }) {
   try {
     // Garante que existe antes de atualizar
     await getSettings();

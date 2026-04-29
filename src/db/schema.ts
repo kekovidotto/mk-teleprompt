@@ -21,4 +21,5 @@ export const settingsTable = pgTable("settings", {
   theme: varchar("theme", { length: 50 }).notNull().default("dark"),
   speed: integer("speed").notNull().default(145),
   fontSize: integer("font_size").notNull().default(110),
+  fontFamily: varchar("font_family", { length: 255 }).notNull().default("Arial, Helvetica, sans-serif"),
 });
