@@ -100,11 +100,7 @@ function TeleprompterMode() {
   }
 
   return (
-    <div 
-      ref={containerRef}
-      className={`flex h-screen flex-col bg-black text-zinc-100 font-sans select-none relative w-full overflow-x-hidden ${mirroring ? 'scale-x-[-1]' : ''}`}
-      style={{ overflowY: isPlaying ? 'hidden' : 'auto' }} // Ocultar barra durante a reprodução para melhor experiência
-    >
+    <div className="flex h-screen flex-col bg-black text-zinc-100 font-sans select-none relative w-full overflow-hidden">
       <style dangerouslySetInnerHTML={{
         __html: `
           .custom-slider-thumb::-webkit-slider-thumb {
@@ -125,8 +121,28 @@ function TeleprompterMode() {
         `
       }} />
 
+      {/* Container de Rolagem Separado */}
+      <div 
+        ref={containerRef}
+        className={`absolute inset-0 overflow-y-auto overflow-x-hidden ${mirroring ? 'scale-x-[-1]' : ''}`}
+      >
+        <main className="relative flex flex-col items-center px-4 md:px-12 w-full max-w-[1024px] mx-auto">
+          {/* Script Content */}
+          <div className="w-full max-w-5xl space-y-10 md:space-y-20 pt-[50vh] pb-[60vh] text-center" style={{ fontSize: `${fontSize}px` }}>
+            {lines.map((line, index) => (
+              <p
+                key={index}
+                className="font-bold leading-[1.3] text-zinc-100 transition-colors duration-300"
+              >
+                {line}
+              </p>
+            ))}
+          </div>
+        </main>
+      </div>
+
       {/* Top AppBar */}
-      <header className={`fixed top-0 left-0 right-0 z-50 mx-auto flex w-full max-w-[1024px] items-center justify-between bg-black/40 px-6 py-4 backdrop-blur-md md:px-8 md:py-6 ${mirroring ? 'scale-x-[-1]' : ''}`}>
+      <header className="fixed top-0 left-0 right-0 z-50 mx-auto flex w-full max-w-[1024px] items-center justify-between bg-black/40 px-6 py-4 backdrop-blur-md md:px-8 md:py-6">
         <div className="flex items-center gap-4 md:gap-6">
           <Link
             href={id ? `/scriptEditor?id=${id}` : "/scriptLibrary"}
@@ -152,34 +168,19 @@ function TeleprompterMode() {
       </header>
 
       {/* Reading Progress Indicator (Top) */}
-      <div className={`fixed top-0 left-0 right-0 z-[60] mx-auto h-[3px] w-full max-w-[1024px] bg-zinc-800 ${mirroring ? 'scale-x-[-1]' : ''}`}>
+      <div className="fixed top-0 left-0 right-0 z-[60] mx-auto h-[3px] w-full max-w-[1024px] bg-zinc-800">
         <div className="h-full w-1/3 bg-cyan-400 shadow-[0_0_12px_rgba(34,211,238,1)]"></div>
       </div>
 
       {/* Center Reading Indicator (Fixed on screen) */}
-      <div className={`pointer-events-none fixed left-0 top-1/2 z-10 flex w-full -translate-y-1/2 items-center justify-between px-2 md:px-6 max-w-[1024px] mx-auto left-0 right-0 ${mirroring ? 'scale-x-[-1]' : ''}`}>
+      <div className="pointer-events-none fixed left-0 right-0 top-1/2 z-10 flex w-full -translate-y-1/2 items-center justify-between px-2 md:px-6 max-w-[1024px] mx-auto">
         <ChevronRight className="h-12 w-12 md:h-16 md:w-16 text-cyan-400/50" />
         <div className="mx-4 md:mx-8 h-[2px] flex-grow bg-gradient-to-r from-transparent via-cyan-400/30 to-transparent"></div>
         <ChevronLeft className="h-12 w-12 md:h-16 md:w-16 text-cyan-400/50" />
       </div>
 
-      {/* Reading Area Canvas */}
-      <main className="relative flex flex-col items-center px-4 md:px-12 w-full max-w-[1024px] mx-auto">
-        {/* Script Content */}
-        <div className="w-full max-w-5xl space-y-10 md:space-y-20 pt-[50vh] pb-[60vh] text-center" style={{ fontSize: `${fontSize}px` }}>
-          {lines.map((line, index) => (
-            <p
-              key={index}
-              className="font-bold leading-[1.3] text-zinc-100 transition-colors duration-300"
-            >
-              {line}
-            </p>
-          ))}
-        </div>
-      </main>
-
       {/* Floating Control Panel */}
-      <div className={`fixed bottom-6 md:bottom-12 left-1/2 z-50 w-[95%] max-w-3xl -translate-x-1/2 ${mirroring ? 'scale-x-[-1]' : ''}`}>
+      <div className="fixed bottom-6 md:bottom-12 left-1/2 z-50 w-[95%] max-w-3xl -translate-x-1/2">
         <div className="flex flex-col md:flex-row items-center justify-between gap-6 md:gap-10 rounded-3xl border border-zinc-700/40 bg-zinc-900/90 px-6 py-6 md:px-10 md:py-8 shadow-2xl backdrop-blur-xl">
           
           {/* Font Size Controls */}
