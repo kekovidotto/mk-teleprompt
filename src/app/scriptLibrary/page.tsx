@@ -11,52 +11,76 @@ import {
   FileEdit,
   Eye,
   Settings,
+  Trash2,
 } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { getScripts, createScript, deleteScript } from "@/lib/actions";
 
-// Mock data to display fixed content
-const MOCK_SCRIPTS = [
-  {
-    id: "1",
-    title: "Revisão Trimestral de Negócios",
-    duration: "08:45",
-    preview:
-      "Bom dia a todos. Hoje estamos reunidos para discutir nosso crescimento notável nos últimos três meses. Nosso foco estratégico na transformação digital rendeu...",
-    modifiedAt: "12 OUT, 2023",
-  },
-  {
-    id: "2",
-    title: "Palestra de Abertura - TechConf",
-    duration: "15:20",
-    preview:
-      "O futuro da inteligência artificial não se trata apenas de modelos de linguagem grandes. É sobre como integramos esses sistemas em nossos fluxos de trabalho diários sem...",
-    modifiedAt: "08 OUT, 2023",
-  },
-  {
-    id: "3",
-    title: "Anúncio de Lançamento de Produto",
-    duration: "04:12",
-    preview:
-      "Bem-vindos à próxima geração de ferramentas criativas. Hoje estamos revelando um produto que levou três anos para ser feito, projetado do zero...",
-    modifiedAt: "28 SET, 2023",
-  },
-  {
-    id: "4",
-    title: "Atualização Geral Interna",
-    duration: "12:30",
-    preview:
-      "Equipe, obrigado por estarem aqui. Quero começar agradecendo o trabalho duro dedicado ao lançamento recente. Vimos algumas métricas incríveis...",
-    modifiedAt: "15 SET, 2023",
-  },
-];
+// Tipo correspondente à tabela
+type Script = {
+  id: string;
+  title: string;
+  content: string;
+  createdAt: Date;
+  updatedAt: Date;
+};
 
 export default function ScriptLibraryPage() {
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
+  const [scripts, setScripts] = useState<Script[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
-  const filteredScripts = MOCK_SCRIPTS.filter((script) =>
+  const loadScripts = async () => {
+    setIsLoading(true);
+    const data = await getScripts();
+    setScripts(data as Script[]);
+    setIsLoading(false);
+  };
+
+  useEffect(() => {
+    loadScripts();
+  }, []);
+
+  const handleCreateNew = async () => {
+    const newScript = await createScript();
+    if (newScript) {
+      router.push(`/scriptEditor?id=${newScript.id}`);
+    }
+  };
+
+  const handleDelete = async (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    const success = await deleteScript(id);
+    if (success) {
+      setScripts(scripts.filter((s) => s.id !== id));
+    }
+    setOpenMenuId(null);
+  };
+
+  const toggleMenu = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    e.nativeEvent.stopImmediatePropagation();
+    if (openMenuId === id) {
+      setOpenMenuId(null);
+    } else {
+      setOpenMenuId(id);
+    }
+  };
+
+  const filteredScripts = scripts.filter((script) =>
     script.title.toLowerCase().includes(searchQuery.toLowerCase()),
   );
+
+  const calculateDuration = (content: string) => {
+    if (!content) return "00:00";
+    const wordCount = content.trim().split(/\s+/).filter((w) => w.length > 0).length;
+    const readingTimeMins = Math.max(1, Math.ceil(wordCount / 130));
+    return `${String(readingTimeMins).padStart(2, "0")}:00`;
+  };
 
   return (
     <div className="flex min-h-screen flex-col bg-[#131313] text-zinc-100">
@@ -69,12 +93,6 @@ export default function ScriptLibraryPage() {
           <h1 className="text-2xl font-bold tracking-tighter text-cyan-400">
             Teleprompter
           </h1>
-        </div>
-        <div className="flex items-center gap-6">
-          <button className="flex items-center gap-2 rounded-full bg-cyan-400 px-6 py-2 font-bold text-black transition-colors duration-200 hover:bg-cyan-300 active:scale-95">
-            <Play className="h-5 w-5 fill-current" />
-            <span>Iniciar</span>
-          </button>
         </div>
       </header>
 
@@ -104,104 +122,127 @@ export default function ScriptLibraryPage() {
           </div>
         </div>
 
-        {/* Script List - Grid on md (tablet+), single column on mobile */}
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-          {filteredScripts.map((script) => (
-            <div
-              key={script.id}
-              className="group relative flex cursor-pointer flex-col justify-between rounded-2xl border border-zinc-800 bg-zinc-900 p-8 transition-all hover:border-zinc-700 hover:bg-zinc-800/80"
-            >
-              <div>
-                <div className="mb-4 flex items-start justify-between gap-4">
-                  <h3 className="text-2xl font-semibold text-zinc-100 transition-colors group-hover:text-cyan-400">
-                    {script.title}
-                  </h3>
-                  <div className="flex shrink-0 items-center gap-2 rounded-full bg-emerald-400/10 px-4 py-1.5">
-                    <Timer className="h-[18px] w-[18px] text-emerald-400" />
-                    <span className="text-xs font-semibold tracking-wider text-emerald-400">
-                      {script.duration}
-                    </span>
+        {/* Script List */}
+        {isLoading ? (
+          <div className="py-12 text-center text-zinc-500 animate-pulse">Carregando scripts...</div>
+        ) : (
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+            {filteredScripts.map((script) => (
+              <div
+                key={script.id}
+                onClick={() => router.push(`/scriptEditor?id=${script.id}`)}
+                className="group relative flex cursor-pointer flex-col justify-between rounded-2xl border border-zinc-800 bg-zinc-900 p-8 transition-all hover:border-zinc-700 hover:bg-zinc-800/80"
+              >
+                <div>
+                  <div className="mb-4 flex items-start justify-between gap-4">
+                    <h3 className="text-2xl font-semibold text-zinc-100 transition-colors group-hover:text-cyan-400">
+                      {script.title}
+                    </h3>
+                    <div className="flex shrink-0 items-center gap-2 rounded-full bg-emerald-400/10 px-4 py-1.5">
+                      <Timer className="h-[18px] w-[18px] text-emerald-400" />
+                      <span className="text-xs font-semibold tracking-wider text-emerald-400">
+                        {calculateDuration(script.content)}
+                      </span>
+                    </div>
+                  </div>
+                  <p className="mb-6 line-clamp-3 text-base text-zinc-400">
+                    {script.content ? script.content : "Nenhum conteúdo..."}
+                  </p>
+                </div>
+                <div className="flex items-center justify-between border-t border-zinc-800/60 pt-6">
+                  <span className="text-xs font-semibold tracking-wider text-zinc-500 uppercase">
+                    MODIFICADO EM {new Date(script.updatedAt).toLocaleDateString("pt-BR")}
+                  </span>
+                  <div className="relative">
+                    <button
+                      onClick={(e) => toggleMenu(e, script.id)}
+                      className="rounded-full p-2.5 text-zinc-400 transition-colors hover:bg-zinc-700 hover:text-zinc-200"
+                    >
+                      <MoreVertical className="h-5 w-5" />
+                    </button>
+                    {/* Menu de opções */}
+                    {openMenuId === script.id && (
+                      <>
+                        <div 
+                          className="fixed inset-0 z-40" 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setOpenMenuId(null);
+                          }} 
+                        />
+                        <div className="absolute right-0 top-full mt-2 w-32 overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900 shadow-2xl z-50">
+                          <button
+                            onClick={(e) => handleDelete(e, script.id)}
+                            className="flex w-full items-center gap-2 px-4 py-3 text-sm font-semibold text-red-400 transition-colors hover:bg-zinc-800 relative z-50"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                            Excluir
+                          </button>
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
-                <p className="mb-6 line-clamp-3 text-base text-zinc-400">
-                  {script.preview}
-                </p>
               </div>
-              <div className="flex items-center justify-between border-t border-zinc-800/60 pt-6">
-                <span className="text-xs font-semibold tracking-wider text-zinc-500 uppercase">
-                  MODIFICADO EM {script.modifiedAt}
-                </span>
-                <div className="flex gap-2">
-                  <button className="rounded-full p-2.5 text-zinc-400 transition-colors hover:bg-zinc-700 hover:text-zinc-200">
-                    <MoreVertical className="h-5 w-5" />
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
+            ))}
 
-          {filteredScripts.length === 0 && (
-            <div className="col-span-full py-12 text-center text-zinc-500">
-              Nenhum script encontrado para "{searchQuery}".
-            </div>
-          )}
-        </div>
+            {filteredScripts.length === 0 && (
+              <div className="col-span-full py-12 text-center text-zinc-500">
+                Nenhum script encontrado para "{searchQuery}".
+              </div>
+            )}
+          </div>
+        )}
       </main>
 
       {/* FAB for New Script */}
-      <button className="fixed right-6 bottom-32 z-40 flex h-16 w-16 items-center justify-center rounded-full bg-cyan-400 text-black shadow-[0_0_30px_rgba(34,211,238,0.3)] transition-all hover:scale-105 hover:bg-cyan-300 active:scale-95 md:right-10">
+      <button
+        onClick={handleCreateNew}
+        className="fixed right-6 bottom-32 z-40 flex h-16 w-16 items-center justify-center rounded-full bg-cyan-400 text-black shadow-[0_0_30px_rgba(34,211,238,0.3)] transition-all hover:scale-105 hover:bg-cyan-300 active:scale-95 md:right-10"
+      >
         <Plus className="h-8 w-8" />
       </button>
 
       {/* BottomNavBar */}
       <nav className="fixed bottom-0 left-0 z-50 flex w-full items-center justify-around border-t border-zinc-800 bg-[#0a0a0a] px-4 pt-4 pb-8 md:px-12">
-        {/* Scripts (Active) */}
         <Link
           href="/scriptLibrary"
           className="flex flex-col items-center justify-center border-t-2 border-cyan-400 pt-3 text-cyan-400 transition-colors active:opacity-80"
-          style={{ WebkitTapHighlightColor: "transparent" }}
         >
           <FileText className="h-7 w-7" />
           <span className="mt-2 text-[10px] font-bold tracking-widest uppercase md:text-xs">
             Scripts
           </span>
         </Link>
-        {/* Editor */}
         <Link
           href="/scriptEditor"
           className="flex flex-col items-center justify-center border-t-2 border-transparent pt-3 text-zinc-500 transition-colors hover:text-zinc-300 active:opacity-80"
-          style={{ WebkitTapHighlightColor: "transparent" }}
         >
           <FileEdit className="h-7 w-7" />
           <span className="mt-2 text-[10px] font-bold tracking-widest uppercase md:text-xs">
             Editor
           </span>
         </Link>
-        {/* Prompter */}
         <Link
           href="/teleprompterMode"
           className="flex flex-col items-center justify-center border-t-2 border-transparent pt-3 text-zinc-500 transition-colors hover:text-zinc-300 active:opacity-80"
-          style={{ WebkitTapHighlightColor: "transparent" }}
         >
           <Eye className="h-7 w-7" />
           <span className="mt-2 text-[10px] font-bold tracking-widest uppercase md:text-xs">
             Prompter
           </span>
         </Link>
-        {/* Settings */}
         <Link
           href="/teleprompterSettings"
           className="flex flex-col items-center justify-center border-t-2 border-transparent pt-3 text-zinc-500 transition-colors hover:text-zinc-300 active:opacity-80"
-          style={{ WebkitTapHighlightColor: "transparent" }}
         >
           <Settings className="h-7 w-7" />
           <span className="mt-2 text-[10px] font-bold tracking-widest uppercase md:text-xs">
-            Configurações
+            Ajustes
           </span>
         </Link>
       </nav>
 
-      {/* Backdrop Glow */}
       <div className="pointer-events-none fixed top-0 left-0 z-[-1] h-full w-full overflow-hidden opacity-20">
         <div className="absolute -top-[10%] -right-[10%] h-[60%] w-[60%] rounded-full bg-cyan-400/20 blur-[120px]"></div>
         <div className="absolute -bottom-[10%] -left-[10%] h-[60%] w-[60%] rounded-full bg-emerald-400/10 blur-[120px]"></div>

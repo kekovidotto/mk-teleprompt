@@ -128,3 +128,12 @@
     @apply font-sans;
   }
 }
+
+.theme-light {
+  filter: invert(1) hue-rotate(180deg);
+  background-color: #f0f0f0;
+}
+
+.theme-light img {
+  filter: invert(1) hue-rotate(180deg);
+}

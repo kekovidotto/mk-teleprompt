@@ -17,12 +17,47 @@ import {
   Settings,
 } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { getSettings, updateSettings } from "@/lib/actions";
 
 export default function TeleprompterSettingsPage() {
   const [mirroring, setMirroring] = useState(true);
   const [theme, setTheme] = useState("dark");
   const [speed, setSpeed] = useState(145);
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  useEffect(() => {
+    async function loadSettings() {
+      const settings = await getSettings();
+      if (settings) {
+        setMirroring(settings.mirroring);
+        setTheme(settings.theme);
+        setSpeed(settings.speed);
+      }
+      setIsLoaded(true);
+    }
+    loadSettings();
+  }, []);
+
+  // Auto-save changes
+  useEffect(() => {
+    if (!isLoaded) return;
+    const timeoutId = setTimeout(() => {
+      updateSettings({ mirroring, theme, speed });
+    }, 500);
+    
+    if (theme === "light") {
+      document.documentElement.classList.add("theme-light");
+    } else {
+      document.documentElement.classList.remove("theme-light");
+    }
+
+    return () => clearTimeout(timeoutId);
+  }, [mirroring, theme, speed, isLoaded]);
+
+  if (!isLoaded) {
+    return <div className="flex h-screen items-center justify-center bg-[#131313] text-cyan-400">Carregando Ajustes...</div>;
+  }
 
   return (
     <div className="flex min-h-screen flex-col bg-[#131313] font-sans text-zinc-100 pb-32 antialiased">
@@ -57,18 +92,14 @@ export default function TeleprompterSettingsPage() {
       </header>
 
       <main className="mx-auto w-full max-w-5xl px-6 md:px-8 pt-28">
-        {/* Two Column Grid for Tablet Layout */}
         <div className="grid grid-cols-1 gap-x-12 gap-y-10 lg:grid-cols-2">
           
-          {/* Column 1: Configuration & About */}
           <div className="space-y-10">
-            {/* Display Configuration Section */}
             <section>
               <h2 className="mb-6 text-2xl font-semibold text-zinc-100">
                 Configuração de Tela
               </h2>
               <div className="space-y-4">
-                {/* Mirroring Setting */}
                 <div className="flex items-center justify-between rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
                   <div className="flex items-center gap-4">
                     <FlipHorizontal className="h-6 w-6 text-zinc-500" />
@@ -90,7 +121,6 @@ export default function TeleprompterSettingsPage() {
                   </label>
                 </div>
 
-                {/* Theme Setting */}
                 <div className="flex items-center justify-between rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
                   <div className="flex items-center gap-4">
                     <Moon className="h-6 w-6 text-zinc-500" />
@@ -121,7 +151,6 @@ export default function TeleprompterSettingsPage() {
                   </div>
                 </div>
 
-                {/* Font Picker */}
                 <div className="flex cursor-pointer items-center justify-between rounded-xl border border-zinc-800 bg-zinc-900/50 p-5 transition-colors hover:bg-zinc-800">
                   <div className="flex items-center gap-4">
                     <Type className="h-6 w-6 text-zinc-500" />
@@ -137,7 +166,6 @@ export default function TeleprompterSettingsPage() {
               </div>
             </section>
 
-            {/* About & Help Section */}
             <section>
               <h2 className="mb-6 text-2xl font-semibold text-zinc-100">
                 Suporte e Versão
@@ -165,9 +193,7 @@ export default function TeleprompterSettingsPage() {
             </section>
           </div>
 
-          {/* Column 2: Playback & Visuals */}
           <div className="space-y-10">
-            {/* Playback Section */}
             <section>
               <h2 className="mb-6 text-2xl font-semibold text-zinc-100">
                 Mecanismo de Reprodução
@@ -194,7 +220,6 @@ export default function TeleprompterSettingsPage() {
                     onChange={(e) => setSpeed(Number(e.target.value))}
                     className="settings-slider-thumb absolute z-10 h-2 w-full cursor-pointer appearance-none rounded-lg bg-transparent"
                   />
-                  {/* Custom Track Backgrounds underneath the invisible native track */}
                   <div className="absolute h-2 w-full rounded-full bg-zinc-700 pointer-events-none"></div>
                   <div 
                     className="absolute h-2 rounded-full bg-cyan-400 shadow-[0_0_15px_rgba(34,211,238,0.5)] pointer-events-none"
@@ -209,7 +234,6 @@ export default function TeleprompterSettingsPage() {
               </div>
             </section>
 
-            {/* Aesthetic Visual Element */}
             <div className="relative h-64 overflow-hidden rounded-2xl border border-zinc-800">
               <img
                 src="https://lh3.googleusercontent.com/aida-public/AB6AXuBJ8RCJ0YDZWGCwBb3cbF7q39naylJIyHWZ4sKlf0aMyuJU6phNxjbyVjQMKyEaJsX2GtMSDeIvWdE1_12vblgykIHP0gX0FKz2-UL2-N7_Mv2XQyMJVqtDGgfPfMrx9zhRmxBNUAbfOn9J-CVpWuxEdndwPtCgigrpcxvLdZjARjvApAg_7LbG6L2CcLSMak5_oTI5FlGfpVpVWEsnGxnufUUOWpG2MAZe3yN35X0XreDQKRzx6KgsO60Ss0iUa-1pTRJnYiEcZNA"
@@ -227,7 +251,6 @@ export default function TeleprompterSettingsPage() {
               </div>
             </div>
 
-            {/* Footer Links */}
             <div className="space-y-5 pt-4">
               <div className="flex cursor-pointer items-center justify-between py-2 text-zinc-400 transition-colors hover:text-zinc-100">
                 <span className="text-base">Política de Privacidade</span>
