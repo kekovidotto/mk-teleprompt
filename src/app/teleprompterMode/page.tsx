@@ -83,7 +83,8 @@ function TeleprompterMode() {
   }, [speed, fontSize, fontFamily, isLoaded]);
 
   // Lógica de Scroll Automático
-  const scrollSpeedPixelsPerSecond = speed * (fontSize / 30); // Fator de cálculo aproximado
+  // Ajuste do fator de cálculo para uma sensação de velocidade mais calibrada
+  const scrollSpeedPixelsPerSecond = speed * (fontSize / 25); 
 
   const animateScroll = (time: number) => {
     if (lastTimeRef.current != undefined) {
@@ -133,6 +134,9 @@ function TeleprompterMode() {
       {/* Container de Rolagem Separado */}
       <div 
         ref={containerRef}
+        onClick={() => { if (isPlaying) setIsPlaying(false); }}
+        onTouchStart={() => { if (isPlaying) setIsPlaying(false); }}
+        onWheel={() => { if (isPlaying) setIsPlaying(false); }}
         className={`absolute inset-0 overflow-y-auto overflow-x-hidden ${mirroring ? 'scale-x-[-1]' : ''}`}
       >
         <main className="relative flex flex-col items-center px-4 md:px-12 w-full max-w-[1024px] mx-auto">
@@ -151,7 +155,7 @@ function TeleprompterMode() {
       </div>
 
       {/* Top AppBar */}
-      <header className="fixed top-0 left-0 right-0 z-50 mx-auto flex w-full max-w-[1024px] items-center justify-between bg-black/40 px-6 py-4 backdrop-blur-md md:px-8 md:py-6">
+      <header className={`fixed top-0 left-0 right-0 z-50 mx-auto flex w-full max-w-[1024px] items-center justify-between bg-black/40 px-6 py-4 backdrop-blur-md md:px-8 md:py-6 transition-all duration-500 ease-in-out ${isPlaying ? '-translate-y-full opacity-0 pointer-events-none' : 'translate-y-0 opacity-100 pointer-events-auto'}`}>
         <div className="flex items-center gap-4 md:gap-6">
           <Link
             href={id ? `/scriptEditor?id=${id}` : "/scriptLibrary"}
@@ -189,7 +193,7 @@ function TeleprompterMode() {
       </div>
 
       {/* Floating Control Panel */}
-      <div className="fixed bottom-6 md:bottom-12 left-1/2 z-50 w-[95%] max-w-3xl -translate-x-1/2">
+      <div className={`fixed bottom-6 md:bottom-12 left-1/2 z-50 w-[95%] max-w-3xl -translate-x-1/2 transition-all duration-500 ease-in-out ${isPlaying ? 'translate-y-24 opacity-0 pointer-events-none' : 'translate-y-0 opacity-100 pointer-events-auto'}`}>
         <div className="flex flex-col md:flex-row items-center justify-between gap-6 md:gap-10 rounded-3xl border border-zinc-700/40 bg-zinc-900/90 px-6 py-6 md:px-10 md:py-8 shadow-2xl backdrop-blur-xl">
           
           {/* Typography Controls */}
@@ -246,7 +250,7 @@ function TeleprompterMode() {
             <div className="relative flex h-8 md:h-10 w-full items-center">
               <input
                 className="custom-slider-thumb h-2 w-full cursor-pointer appearance-none rounded-lg bg-zinc-800"
-                max="300"
+                max="800"
                 min="10"
                 type="range"
                 value={speed}
